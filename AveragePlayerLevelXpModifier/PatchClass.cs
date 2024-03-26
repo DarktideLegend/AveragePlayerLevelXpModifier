@@ -96,6 +96,7 @@ namespace AveragePlayerLevelXpModifier
 
         private static uint PlayerLevelAverage = Settings.StartingAverageLevelPlayer;
 
+        public static TimeSpan PlayerLevelInterval = TimeSpan.FromMinutes(Settings.PlayerLevelAverageInterval);
 
         private static DateTime LastCheck = DateTime.MinValue;
 
@@ -213,7 +214,7 @@ namespace AveragePlayerLevelXpModifier
         [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.Tick))]
         public static void PostTick()
         {
-            if (LastCheck + TimeSpan.FromMinutes(Settings.PlayerLevelAverageInterval) <= DateTime.UtcNow)
+            if (LastCheck + PlayerLevelInterval <= DateTime.UtcNow)
             {
 
                 LastCheck = DateTime.UtcNow;
