@@ -98,45 +98,76 @@ namespace AveragePlayerLevelXpModifier
 
         public static TimeSpan PlayerLevelInterval = TimeSpan.FromMinutes(Settings.PlayerLevelAverageInterval);
 
-        private static DateTime LastCheck = DateTime.MinValue;
+        private static DateTime LastCheck = DateTime.UtcNow;
 
+
+        public class PlayerLevelAverageException : Exception
+        {
+            // Constructor that accepts a message
+            public PlayerLevelAverageException(string message) : base(message)
+            {
+            }
+
+            // Constructor that accepts a message and an inner exception
+            public PlayerLevelAverageException(string message, Exception innerException) : base(message, innerException)
+            {
+            }
+        }
 
         private static void GetPlayerLevelAverage()
         {
             ModManager.Log("[PlayerManager] Getting the PlayerLevelAverage for the server");
-            var levels = new List<int>();
-            var accountNames = DatabaseManager.Authentication.GetListofAccountsByAccessLevel(AccessLevel.Player);
-            var accounts = accountNames.Select(DatabaseManager.Authentication.GetAccountByName);
-            var accountIds = accounts.Select(account => account.AccountId);
-            var accountPlayers = accountIds.Select(PlayerManager.GetAccountPlayers);
-
-            if (!accountPlayers.Any())
-                PlayerLevelAverage = 1;
-
-            foreach (var account in accountPlayers)
+            try
             {
-                if (account != null)
+                var accountNames = DatabaseManager.Authentication.GetListofAccountsByAccessLevel(AccessLevel.Player);
+
+                if (!accountNames.Any())
                 {
-                    var highestLevelPlayer = account.Values.MaxBy(player => player.Level);
+                    throw new PlayerLevelAverageException("There are no accounts currently created on the server.");
+                }
+
+                var levels = new List<int>();
+
+                foreach (var accountName in accountNames)
+                {
+                    var account = DatabaseManager.Authentication.GetAccountByName(accountName);
+
+                    if (account == null)
+                    {
+                        continue;
+                    }
+
+                    var players = PlayerManager.GetAccountPlayers(account.AccountId);
+
+                    if (players.Count <= 0)
+                        continue;
+
+                    var highestLevelPlayer = players.Values.MaxBy(player => player.Level);
+
                     if (highestLevelPlayer != null)
                     {
                         ModManager.Log($"[PlayerManager]: Player: {highestLevelPlayer.Name}, Level: {highestLevelPlayer.Level}");
                         levels.Add((int)highestLevelPlayer.Level);
                     }
                 }
-            }
 
-            if (levels.Count > 0)
-            {
-                var max = (uint)levels.Max();
-                var average = (uint)levels.Average();
-                if (max > Settings.StartingAverageLevelPlayer)
+                if (levels.Count > 0)
                 {
-                    PlayerLevelAverage = average;
-                }
-            }
+                    var max = (uint)levels.Max();
+                    var average = (uint)levels.Average();
 
-            ModManager.Log($"[PlayerManager] Finished getting the PlayerLevelAverage, the average player level is {PlayerLevelAverage}");
+                    if (max > Settings.StartingAverageLevelPlayer)
+                    {
+                        PlayerLevelAverage = average;
+                    }
+                }
+
+                ModManager.Log($"[PlayerManager] Finished getting the PlayerLevelAverage, the average player level is {PlayerLevelAverage}");
+            }
+            catch (Exception ex)
+            {
+                ModManager.Log($"[PlayerManager] Error occurred while getting PlayerLevelAverage: {ex.Message}", ModManager.LogLevel.Error);
+            }
         }
 
         private static double GetPlayerLevelXpModifier(int level)
@@ -203,27 +234,25 @@ namespace AveragePlayerLevelXpModifier
             return false;
         }
 
-
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.Initialize))]
-        public static void PostInitialize()
-        {
-            GetPlayerLevelAverage();
-
-        }
-
         [HarmonyPostfix]
         [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.Tick))]
         public static void PostTick()
         {
             if (LastCheck + PlayerLevelInterval <= DateTime.UtcNow)
             {
-
                 LastCheck = DateTime.UtcNow;
                 GetPlayerLevelAverage();
             }
         }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(WorldManager), nameof(WorldManager.Open), new Type[] { typeof(Player) })]
+        public static void PostOpen(Player player)
+        {
+            GetPlayerLevelAverage();
+            LastCheck = DateTime.UtcNow;
+        }
+
 
         [CommandHandler("myxp", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0, "Show your xp modifier based on global average", "")]
         public static void HandleMyXp(Session session, params string[] parameters)
