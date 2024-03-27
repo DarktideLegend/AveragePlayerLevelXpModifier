@@ -1,6 +1,6 @@
 # AveragePlayerLevelXpModifier
 
-This is a mod that calculates the highest level character from each player's account on the server (does not include admin accounts). The average player level is divided by the character's level to determine their xp modifier.
+This is a mod that calculates the highest level character from each player's account on the server (does not include admin accounts) and finds the average. The average player level for the entire server is divided by the character's level to determine their xp modifier.
 
 **Example:**
 
