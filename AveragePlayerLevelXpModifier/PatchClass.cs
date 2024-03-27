@@ -114,9 +114,13 @@ namespace AveragePlayerLevelXpModifier
             }
         }
 
-        private static void GetPlayerLevelAverage()
+        private static List<string> GetPlayerLevelAverage()
         {
-            ModManager.Log("[PlayerManager] Getting the PlayerLevelAverage for the server");
+            var messages = new List<string>();
+
+            var intro = "[PlayerManager] Getting the PlayerLevelAverage for the server";
+            ModManager.Log(intro);
+            messages.Add(intro);
             try
             {
                 var accountNames = DatabaseManager.Authentication.GetListofAccountsByAccessLevel(AccessLevel.Player);
@@ -146,7 +150,11 @@ namespace AveragePlayerLevelXpModifier
 
                     if (highestLevelPlayer != null)
                     {
-                        ModManager.Log($"[PlayerManager]: Player: {highestLevelPlayer.Name}, Level: {highestLevelPlayer.Level}");
+                        var message = $"[PlayerManager]: Player: {highestLevelPlayer.Name}, Level: {highestLevelPlayer.Level}";
+
+                        ModManager.Log(message);
+                        messages.Add($"{message}");
+
                         levels.Add((int)highestLevelPlayer.Level);
                     }
                 }
@@ -162,11 +170,17 @@ namespace AveragePlayerLevelXpModifier
                     }
                 }
 
-                ModManager.Log($"[PlayerManager] Finished getting the PlayerLevelAverage, the average player level is {PlayerLevelAverage}");
+                var outro = $"[PlayerManager] Finished getting the PlayerLevelAverage, the average player level is {PlayerLevelAverage}";
+                ModManager.Log(outro);
+                messages.Add(outro);
+                return messages;
             }
             catch (Exception ex)
             {
-                ModManager.Log($"[PlayerManager] Error occurred while getting PlayerLevelAverage: {ex.Message}", ModManager.LogLevel.Error);
+                var error = $"[PlayerManager] Error occurred while getting PlayerLevelAverage: {ex.Message}";
+                ModManager.Log(error, ModManager.LogLevel.Error);
+                messages.Add(error);
+                return messages;
             }
         }
 
@@ -260,6 +274,16 @@ namespace AveragePlayerLevelXpModifier
             var modifier = GetPlayerLevelXpModifier((int)session.Player.Level);
             CommandHandlerHelper.WriteOutputInfo(session, $"The average player level of the server: {PlayerLevelAverage}", ChatMessageType.Broadcast);
             CommandHandlerHelper.WriteOutputInfo(session, $"You currently earn {(float)modifier}x the amount of xp from kills and quests", ChatMessageType.Broadcast);
+        }
+
+        [CommandHandler("player-level-xp", AccessLevel.Developer, CommandHandlerFlag.None, 0, "Show your xp modifier based on global average", "")]
+        public static void HandleGetPlayerLevelXp(Session session, params string[] parameters)
+        {
+            var messages = GetPlayerLevelAverage();
+            foreach(var message in messages)
+            {
+                session.Player.SendMessage(message, ChatMessageType.System);
+            }
         }
         #endregion
     }
