@@ -273,7 +273,7 @@ namespace AveragePlayerLevelXpModifier
         {
             var modifier = GetPlayerLevelXpModifier((int)session.Player.Level);
             CommandHandlerHelper.WriteOutputInfo(session, $"The average player level of the server: {PlayerLevelAverage}", ChatMessageType.Broadcast);
-            CommandHandlerHelper.WriteOutputInfo(session, $"You currently earn {(float)modifier}x the amount of xp from kills and quests", ChatMessageType.Broadcast);
+            CommandHandlerHelper.WriteOutputInfo(session, $"You currently earn {modifier.ToString("0.00")}x the amount of xp from kills and quests", ChatMessageType.Broadcast);
         }
 
         [CommandHandler("player-level-xp", AccessLevel.Developer, CommandHandlerFlag.None, 0, "Show your xp modifier based on global average", "")]
