@@ -178,13 +178,16 @@ namespace AveragePlayerLevelXpModifier
                 modifier *= questModifier;
 
             var playerLevelModifier = GetPlayerLevelXpModifier((int)__instance.Level);
-            var realmMultiplierAll = __instance.RealmRuleset?.GetProperty(RealmPropertyFloat.ExperienceMultiplierAll) ?? 1;
+
+            // uncomment for ACRealms 
+            //var realmMultiplierAll = __instance.RealmRuleset?.GetProperty(RealmPropertyFloat.ExperienceMultiplierAll) ?? 1;
 
 
             // should this be passed upstream to fellowship / allegiance?
             var enchantment = __instance.GetXPAndLuminanceModifier(xpType);
 
-            var capped = AddXpCap(amount * enchantment * modifier * playerLevelModifier * realmMultiplierAll, (int)__instance.Level);
+            // uncomment realmMultiplierAll for ACrealms
+            var capped = AddXpCap(amount * enchantment * modifier * playerLevelModifier /* *  realmMultiplierAll  */, (int)__instance.Level);
 
             var m_amount = (long)Math.Round(capped);
 
@@ -221,7 +224,6 @@ namespace AveragePlayerLevelXpModifier
                 GetPlayerLevelAverage();
             }
         }
-
 
         [CommandHandler("myxp", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0, "Show your xp modifier based on global average", "")]
         public static void HandleMyXp(Session session, params string[] parameters)
