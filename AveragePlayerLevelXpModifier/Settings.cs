@@ -9,7 +9,7 @@
         public uint StartingAverageLevelPlayer = 50;
 
         // the interval to check the PlayerLevelAverage in minutes
-        public uint PlayerLevelAverageInterval { get; set; } = 1;
+        public uint PlayerLevelAverageInterval = 60;
 
         // this is applied to every LevelThreshold 
         public double LevelCapModifier { get; set; } = 0.15;
