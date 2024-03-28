@@ -259,13 +259,19 @@ namespace XpModifier
             }
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(WorldManager), nameof(WorldManager.Open), new Type[] { typeof(Player) })]
-        public static void PostOpen(Player player)
+        public static bool PreOpen(Player player)
         {
             GetPlayerLevelAverage();
             LastCheck = DateTime.UtcNow;
+            //Return false to override
+            //return false;
+
+            //Return true to execute original
+            return true;
         }
+
 
 
         [CommandHandler("myxp", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0, "Show your xp modifier based on global average", "")]
