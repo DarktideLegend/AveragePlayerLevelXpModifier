@@ -1,4 +1,4 @@
-﻿namespace AveragePlayerLevelXpModifier
+﻿namespace XpModifier
 {
     public class Settings
     {

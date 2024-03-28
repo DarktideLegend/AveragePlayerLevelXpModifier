@@ -3,7 +3,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Command.Handlers;
 using ACE.Server.Managers;
 
-namespace AveragePlayerLevelXpModifier
+namespace XpModifier
 {
     [HarmonyPatch]
     public class PatchClass

@@ -1,4 +1,4 @@
-﻿namespace AveragePlayerLevelXpModifier
+﻿namespace XpModifier
 {
     public class Mod : IHarmonyMod
     {
@@ -6,10 +6,10 @@
         //If Harmony is set to debug it creates a log on Desktop
         public const bool DEBUGGING = false;
         //Point to your mod directory
-        public static string ModPath = Path.Combine(ModManager.ModPath, "AveragePlayerLevelXpModifier");
+        public static string ModPath = Path.Combine(ModManager.ModPath, "XpModifier");
 
         //IDs are used by Harmony to separate multiple patches
-        const string ID = "com.ACE.ACEmulator.AveragePlayerLevelXpModifier";
+        const string ID = "com.ACE.ACEmulator.XpModifier";
         public static Harmony Harmony { get; set; } = new(ID);
 
         private bool disposedValue;
