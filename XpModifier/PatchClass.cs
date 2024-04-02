@@ -2,6 +2,7 @@
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Command.Handlers;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameMessages.Messages;
 
 namespace XpModifier
 {
@@ -94,12 +95,28 @@ namespace XpModifier
 
         #region Patches
 
-        private static uint PlayerLevelAverage = Settings.StartingAverageLevelPlayer;
+        private static readonly object Lock = new object();
 
-        public static TimeSpan PlayerLevelInterval = TimeSpan.FromMinutes(Settings.PlayerLevelAverageInterval);
+        private static uint? _average;
 
-        private static DateTime LastCheck = DateTime.UtcNow;
+        private static uint PlayerLevelAverage
+        {
+            get
+            {
+                var starter = Settings.StartingAverageLevelPlayer;
+                if (_average == null || _average < starter)
+                {
+                    return starter;
+                }
+                else
+                    return (uint)_average;
+            }
 
+            set
+            {
+                _average = value;
+            }
+        }
 
         public class PlayerLevelAverageException : Exception
         {
@@ -137,11 +154,12 @@ namespace XpModifier
                     var account = DatabaseManager.Authentication.GetAccountByName(accountName);
 
                     if (account == null)
-                    {
                         continue;
-                    }
 
                     var players = PlayerManager.GetAccountPlayers(account.AccountId);
+
+                    if (players == null)
+                        continue;
 
                     if (players.Count <= 0)
                         continue;
@@ -161,13 +179,9 @@ namespace XpModifier
 
                 if (levels.Count > 0)
                 {
-                    var max = (uint)levels.Max();
                     var average = (uint)levels.Average();
 
-                    if (max > Settings.StartingAverageLevelPlayer)
-                    {
-                        PlayerLevelAverage = average;
-                    }
+                    PlayerLevelAverage = average;
                 }
 
                 var outro = $"[PlayerManager] Finished getting the PlayerLevelAverage, the average player level is {PlayerLevelAverage}";
@@ -186,6 +200,7 @@ namespace XpModifier
 
         private static double GetPlayerLevelXpModifier(int level)
         {
+            if (level <= 5) return 1;
             var playerLevelAverage = PlayerLevelAverage;
             return (double)playerLevelAverage / (double)level;
         }
@@ -248,31 +263,17 @@ namespace XpModifier
             return false;
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.Tick))]
-        public static void PostTick()
-        {
-            if (LastCheck + PlayerLevelInterval <= DateTime.UtcNow)
-            {
-                LastCheck = DateTime.UtcNow;
-                GetPlayerLevelAverage();
-            }
-        }
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(WorldManager), nameof(WorldManager.Open), new Type[] { typeof(Player) })]
         public static bool PreOpen(Player player)
         {
             GetPlayerLevelAverage();
-            LastCheck = DateTime.UtcNow;
             //Return false to override
             //return false;
 
             //Return true to execute original
             return true;
         }
-
-
 
         [CommandHandler("myxp", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0, "Show your xp modifier based on global average", "")]
         public static void HandleMyXp(Session session, params string[] parameters)
@@ -290,6 +291,89 @@ namespace XpModifier
             {
                 session.Player.SendMessage(message, ChatMessageType.System);
             }
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "CheckForLevelup")]
+        public static bool PreCheckForLevelup(ref Player __instance)
+        {
+            var xpTable = DatManager.PortalDat.XpTable;
+
+            var maxLevel = Player.GetMaxLevel();
+
+            if (__instance.Level >= maxLevel) return false;
+
+            var startingLevel = __instance.Level;
+            bool creditEarned = false;
+
+            // increases until the correct level is found
+            while ((ulong)(__instance.TotalExperience ?? 0) >= xpTable.CharacterLevelXPList[(__instance.Level ?? 0) + 1])
+            {
+                __instance.Level++;
+
+                // increase the skill credits if the chart allows this level to grant a credit
+                if (xpTable.CharacterLevelSkillCreditList[__instance.Level ?? 0] > 0)
+                {
+                    __instance.AvailableSkillCredits += (int)xpTable.CharacterLevelSkillCreditList[__instance.Level ?? 0];
+                    __instance.TotalSkillCredits += (int)xpTable.CharacterLevelSkillCreditList[__instance.Level ?? 0];
+                    creditEarned = true;
+                }
+
+                // break if we reach max
+                if (__instance.Level == maxLevel)
+                {
+                    __instance.PlayParticleEffect(PlayScript.WeddingBliss, __instance.Guid);
+                    break;
+                }
+            }
+
+            if (__instance.Level > startingLevel)
+            {
+                var message = (__instance.Level == maxLevel) ? $"You have reached the maximum level of {__instance.Level}!" : $"You are now level {__instance.Level}!";
+
+                message += (__instance.AvailableSkillCredits > 0) ? $"\nYou have {__instance.AvailableExperience:#,###0} experience points and {__instance.AvailableSkillCredits} skill credits available to raise skills and attributes." : $"\nYou have {__instance.AvailableExperience:#,###0} experience points available to raise skills and attributes.";
+
+                var levelUp = new GameMessagePrivateUpdatePropertyInt(__instance, PropertyInt.Level, __instance.Level ?? 1);
+                var currentCredits = new GameMessagePrivateUpdatePropertyInt(__instance, PropertyInt.AvailableSkillCredits, __instance.AvailableSkillCredits ?? 0);
+
+                if (__instance.Level != maxLevel && !creditEarned)
+                {
+                    var nextLevelWithCredits = 0;
+
+                    for (int i = (__instance.Level ?? 0) + 1; i <= maxLevel; i++)
+                    {
+                        if (xpTable.CharacterLevelSkillCreditList[i] > 0)
+                        {
+                            nextLevelWithCredits = i;
+                            break;
+                        }
+                    }
+                    message += $"\nYou will earn another skill credit at level {nextLevelWithCredits}.";
+                }
+
+                if (__instance.Fellowship != null)
+                    __instance.Fellowship.OnFellowLevelUp(__instance);
+
+                if (__instance.AllegianceNode != null)
+                    __instance.AllegianceNode.OnLevelUp();
+
+                __instance.Session.Network.EnqueueSend(levelUp);
+
+                __instance.SetMaxVitals();
+
+                // play level up effect
+                __instance.PlayParticleEffect(PlayScript.LevelUp, __instance.Guid);
+
+                __instance.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Advancement), currentCredits);
+
+                lock (Lock)
+                {
+                    GetPlayerLevelAverage();
+                }
+            }
+
+            return false;
+
         }
         #endregion
     }
