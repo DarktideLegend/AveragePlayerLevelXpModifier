@@ -240,14 +240,14 @@ namespace XpModifier
             var playerLevelModifier = GetPlayerLevelXpModifier((int)__instance.Level);
 
             // uncomment for ACRealms 
-            //var realmMultiplierAll = __instance.RealmRuleset?.GetProperty(RealmPropertyFloat.ExperienceMultiplierAll) ?? 1;
+            var realmMultiplierAll = __instance.RealmRuleset?.GetProperty(RealmPropertyFloat.ExperienceMultiplierAll) ?? 1;
 
 
             // should this be passed upstream to fellowship / allegiance?
             var enchantment = __instance.GetXPAndLuminanceModifier(xpType);
 
             // uncomment realmMultiplierAll for ACrealms
-            var capped = AddXpCap(amount * enchantment * modifier * playerLevelModifier /* *  realmMultiplierAll  */, (int)__instance.Level);
+            var capped = AddXpCap(amount * enchantment * modifier * playerLevelModifier * realmMultiplierAll , (int)__instance.Level);
 
             var m_amount = (long)Math.Round(capped);
 
