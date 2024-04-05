@@ -131,6 +131,8 @@ namespace XpModifier
             }
         }
 
+        private static Dictionary<uint, AccountLevelInfo> AccountIdToMaxLevel = new Dictionary<uint, AccountLevelInfo>();
+
         private static List<string> GetPlayerLevelAverage()
         {
             var messages = new List<string>();
@@ -169,6 +171,9 @@ namespace XpModifier
                     if (highestLevelPlayer != null)
                     {
                         var message = $"[PlayerManager]: Player: {highestLevelPlayer.Name}, Level: {highestLevelPlayer.Level}";
+
+                        var info = new AccountLevelInfo(highestLevelPlayer.Name, (int)highestLevelPlayer.Level);
+                        AccountIdToMaxLevel[highestLevelPlayer.Account.AccountId] = info;
 
                         ModManager.Log(message);
                         messages.Add($"{message}");
@@ -366,15 +371,41 @@ namespace XpModifier
 
                 __instance.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Advancement), currentCredits);
 
-                lock (Lock)
-                {
-                    GetPlayerLevelAverage();
-                }
+                HandlePlayerLevelUp(__instance);
             }
 
             return false;
 
         }
+
+        public class AccountLevelInfo
+        {
+            public string Name { get; set; }
+            public int HighestLevel { get; set; }
+
+            public AccountLevelInfo(string name, int highestLevel)
+            {
+                Name = name;
+                HighestLevel = highestLevel;
+            }
+        }
+
+
+
+        private static void HandlePlayerLevelUp(Player player)
+        {
+            if (!AccountIdToMaxLevel.TryGetValue(player.Account.AccountId, out AccountLevelInfo account) || player.Level > account.HighestLevel)
+            {
+                AccountIdToMaxLevel[player.Account.AccountId] = new AccountLevelInfo(player.Name, (int)player.Level);
+            }
+
+
+            var levels = AccountIdToMaxLevel.Values.Select(info => info.HighestLevel);
+            PlayerLevelAverage = (uint)levels.Average();
+
+            Debugger.Break();
+        }
+
         #endregion
     }
 
