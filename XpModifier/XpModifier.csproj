@@ -18,14 +18,15 @@
 		<None Remove=".template.config\**" />
 	</ItemGroup>
 
+
 	<PropertyGroup>
 		<PublicizeAll>true</PublicizeAll>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Krafs.Publicizer" Version="2.2.1">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Lib.Harmony" Version="2.3.0-prerelease.2" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.0">
@@ -40,31 +41,33 @@
 
 	<ItemGroup>
 		<Reference Include="ACE.Adapter">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Adapter.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Adapter.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="ACE.Common">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Common.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Common.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="ACE.Database">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Database.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Database.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="ACE.DatLoader">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.DatLoader.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.DatLoader.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 		<Reference Include="ACE.Entity">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Entity.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Entity.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
+
 		<Reference Include="ACE.Server">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Server.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\ACE.Server.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
+
 		<Reference Include="Microsoft.EntityFrameworkCore">
-			<HintPath>C:\Users\node_\projects\ACERealms\Source\ACE.Server\bin\x64\Debug\net6.0\Microsoft.EntityFrameworkCore.dll</HintPath>
+			<HintPath>C:\Users\node_\projects\Pourtide\Source\ACE.Server\bin\x64\Debug\net6.0\Microsoft.EntityFrameworkCore.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>
@@ -74,7 +77,7 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-	
+
 	<!--Get rid of assemblies that should be present in ACE-->
 	<Target Name="CleanupFiles" AfterTargets="PostBuildEvent">
 		<ItemGroup>
